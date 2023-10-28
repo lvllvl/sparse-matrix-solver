@@ -7,10 +7,25 @@
   
     <!-- Matrix and Divider Section -->
     <div class="container">
-      <!-- Left Side -->
-      <div class="matrix-section">
-        <div class="matrix-box red-border"></div>
-      </div>
+    <!-- Left Side -->
+<div class="matrix-section">
+  <div class="matrix-box red-border">
+    <!-- Displaying the generated sparse matrix -->
+    <div v-if="sparseMatrix.length">
+      <table>
+        <tr v-for="row in sparseMatrix" :key="row">
+          <td v-for="cell in row" :key="cell">{{ cell }}</td>
+        </tr>
+      </table>
+    </div>
+    <div v-else-if="error">
+      Error: {{ error }}
+    </div>
+  </div>
+</div>
+
+
+
 
       <div class="divider"></div>
 
@@ -32,10 +47,24 @@
 
 <script>
 export default {
+  data() {
+    return {
+      sparseMatrix: [], // This will store the generated sparse matrix
+      error: null // To handle any errors during the API request
+    };
+  },
   methods: {
-    generateMatrix() {
-      // TODO: Implement logic to generate a random sparse matrix
-      console.log("Generating matrix...");
+    async generateMatrix() {
+      try {
+        const response = await fetch('http://localhost:3000/generateMatrix');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const matrix = await response.json(); // Assuming the backend returns the matrix as a JSON
+        this.sparseMatrix = matrix;
+      } catch (error) {
+        this.error = "Failed to generate matrix: " + error.message;
+      }
     },
     solveMatrix() {
       // TODO: Implement logic to solve the matrix
@@ -45,9 +74,10 @@ export default {
   head() {
     return {
       title: 'Sparse Matrix Solver'
-    }
+    };
   }
 };
+
 </script>
 
 
@@ -67,6 +97,20 @@ header {
 h1 {
   font-size: 32px;
   color: #333;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+
+th, td {
+  padding: 8px 12px;
+  text-align: center;
 }
 
 .blue-border {
@@ -121,5 +165,7 @@ h1 {
   align-items: center;
   padding: 1% 5%;
 }
+
+
 
 </style>

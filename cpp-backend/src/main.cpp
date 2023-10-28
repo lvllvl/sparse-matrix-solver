@@ -1,21 +1,25 @@
-#include "SparseMatrixGenerator.hpp"
-#include <iostream>
+#include "crow.h"
+#include "SparseMatrixGenerator.h" // Assuming you have such a file
 
 int main() {
-    // Example usage
-    int rows = 5;
-    int cols = 5;
-    double sparsity = 0.1;
+    crow::SimpleApp app;
 
-    Matrix matrix = generateSparseMatrix(rows, cols, sparsity);
+    CROW_ROUTE(app, "/generateMatrix")
+    ([&]() {
+        // Generate the sparse matrix
+        SparseMatrixGenerator generator; // Assuming you have such a class
+        auto matrix = generator.generate();
 
-    // Display the matrix (or any other operations you want to perform)
-    for (const auto& row : matrix) {
-        for (double val : row) {
-            std::cout << val << " ";
+        // Convert the matrix to JSON and return
+        crow::json::wvalue x;
+        // Assuming matrix is a 2D vector
+        for (int i = 0; i < matrix.size(); i++) {
+            for (int j = 0; j < matrix[i].size(); j++) {
+                x[i][j] = matrix[i][j];
+            }
         }
-        std::cout << std::endl;
-    }
+        return x;
+    });
 
-    return 0;
+    app.port(4000).multithreaded().run();
 }
