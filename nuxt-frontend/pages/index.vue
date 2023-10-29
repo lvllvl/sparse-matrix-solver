@@ -56,9 +56,11 @@ export default {
   methods: {
     async generateMatrix() {
       try {
-        const response = await fetch('http://localhost:3000/generateMatrix');
+        const response = await fetch('http://localhost:8000/generateMatrix');
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          const text = await response.text(); // Get response as text
+          console.log( "Server Response: ", text ); // Log it ! 
+          throw new Error('Network response was not ok: ${text}');
         }
         const matrix = await response.json(); // Assuming the backend returns the matrix as a JSON
         this.sparseMatrix = matrix;
