@@ -7,23 +7,17 @@
   
     <!-- Matrix and Divider Section -->
     <div class="container">
-    <!-- Left Side -->
-<div class="matrix-section">
-  <div class="matrix-box red-border">
-    <!-- Displaying the generated sparse matrix -->
-    <div v-if="sparseMatrix.length">
-      <table>
-        <tr v-for="row in sparseMatrix" :key="row">
-          <td v-for="cell in row" :key="cell">{{ cell }}</td>
-        </tr>
-      </table>
-    </div>
-    <div v-else-if="error">
-      Error: {{ error }}
-    </div>
-  </div>
-</div>
 
+       <!-- Left Side -->
+    <div class="matrix-section">
+      <div class="matrix-box red-border">
+        <!-- Displaying the generated sparse matrix using MathJax -->
+        <div v-html="matrixLatex"></div>
+        <div v-if="error">
+          Error: {{ error }}
+        </div>
+      </div>
+    </div>
 
 
 
@@ -50,9 +44,20 @@ export default {
   data() {
     return {
       sparseMatrix: [], // This will store the generated sparse matrix
+      matrixLatex: '', // This will store the LaTex representation of the matrix 
       error: null // To handle any errors during the API request
     };
   },
+  computed: {
+    formattedMatrixLatex() {
+          let latex = '\\begin{bmatrix}'; // Start of matrix in LaTeX
+          for ( let row of this.sparseMatrix ) {
+            latex += row.join(' & ') + ' \\\\'; 
+          }
+          latex += '\\end{bmatrix}'; // End of matrix in LaTeX
+          return `$${latex}$`; // Wrap with `$` delimiters
+          }
+    },
   methods: {
     async generateMatrix() {
       try {
@@ -62,8 +67,15 @@ export default {
           console.log( "Server Response: ", text ); // Log it ! 
           throw new Error('Network response was not ok: ${text}');
         }
-        const matrix = await response.json(); // Assuming the backend returns the matrix as a JSON
-        this.sparseMatrix = matrix;
+        const data = await response.json(); // Assuming the backend returns the matrix as a JSON
+        this.sparseMatrix = data.matrix;
+        this.matrixLatex = this.formattedMatrixLatex; // Update the LaTex representation of the matrix
+        console.log( this.matrixLatex ); // Log the LaTex representation of the matrix
+
+        // Update MathJax rendering 
+        if ( window.MathJax && typeof window.MathJax.typesetPromise === 'function' ){
+          await window.MathJax.typesetPromise(); // Force mathJax to update
+        }
       } catch (error) {
         this.error = "Failed to generate matrix: " + error.message;
       }
@@ -71,15 +83,14 @@ export default {
     solveMatrix() {
       // TODO: Implement logic to solve the matrix
       console.log("Solving matrix...");
-    }
-  },
+      }
+   },
   head() {
     return {
       title: 'Sparse Matrix Solver'
     };
   }
 };
-
 </script>
 
 
@@ -103,7 +114,9 @@ h1 {
 
 table {
   width: 100%;
+  max-height: 38vw;
   border-collapse: collapse;
+  overflow: hidden; /* hides any content that overflows the table */  
 }
 
 table, th, td {
@@ -111,8 +124,9 @@ table, th, td {
 }
 
 th, td {
-  padding: 8px 12px;
+  padding: 4px 8px;
   text-align: center;
+  font-size: 0.8em; /* Smaller font size for larger matrices */ 
 }
 
 .blue-border {
@@ -155,6 +169,7 @@ th, td {
   width: 40vw; /* this ensures the box is a square */
   height: 40vw; /* this ensures the box is a square */
   margin-bottom: 20px;
+  overflow: auto; /* makes the content scrollable if it overflows */
 }
 
 .red-border {

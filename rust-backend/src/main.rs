@@ -51,7 +51,10 @@ fn generate_sparse_matrix(m: usize, n: usize, s: f64) -> Matrix {
             col = rng.gen_range(0..n);
         }
 
-        matrix[row][col] = rng.gen::<f64>();
+        // Generate a random float and format it to 2 decimal places
+        let value = rng.gen::<f64>();
+        let formatted_value = format!("{:.2}", value).parse::<f64>().unwrap();
+        matrix[row][col] = formatted_value 
     }
     matrix
 }
