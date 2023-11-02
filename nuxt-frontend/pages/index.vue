@@ -45,7 +45,8 @@ export default {
     return {
       sparseMatrix: [], // This will store the generated sparse matrix
       matrixLatex: '', // This will store the LaTex representation of the matrix 
-      error: null // To handle any errors during the API request
+      error: null, // To handle any errors during the API request
+      solution: null // store the solution 
     };
   },
   computed: {
@@ -61,29 +62,53 @@ export default {
   methods: {
     async generateMatrix() {
       try {
-        const response = await fetch('http://localhost:8000/generateMatrix');
+        const response = await fetch('http://localhost:8000/generateMatrix', { method: 'POST' });
+        console.log( "Raw Response: ", response ); 
+
         if (!response.ok) {
           const text = await response.text(); // Get response as text
           console.log( "Server Response: ", text ); // Log it ! 
-          throw new Error('Network response was not ok: ${text}');
+          throw new Error(`Network response was not ok: ${text}`);
         }
-        const data = await response.json(); // Assuming the backend returns the matrix as a JSON
-        this.sparseMatrix = data.matrix;
-        this.matrixLatex = this.formattedMatrixLatex; // Update the LaTex representation of the matrix
-        console.log( this.matrixLatex ); // Log the LaTex representation of the matrix
 
-        // Update MathJax rendering 
-        if ( window.MathJax && typeof window.MathJax.typesetPromise === 'function' ){
-          await window.MathJax.typesetPromise(); // Force mathJax to update
+        if ( response.bodyUsed ) {
+          const data = await response.json(); // Assuming the backend returns the matrix as a JSON
+          this.sparseMatrix = data.matrix;
+          this.matrixLatex = this.formattedMatrixLatex; // Update the LaTex representation of the matrix
+          console.log( this.matrixLatex ); // Log the LaTex representation of the matrix
+
+          // Update MathJax rendering 
+          if ( window.MathJax && typeof window.MathJax.typesetPromise === 'function' ){
+            await window.MathJax.typesetPromise(); // Force mathJax to update
+          }
+
+        } else {
+          console.error( "Response body is empty" ); 
         }
+
       } catch (error) {
+        console.error( "Failed to generate matrix: ", error.message );
         this.error = "Failed to generate matrix: " + error.message;
       }
     },
-    solveMatrix() {
-      // TODO: Implement logic to solve the matrix
-      console.log("Solving matrix...");
+    async solveMatrix() {
+      try {
+        // First, solve the matrix
+        await fetch( 'http://localhost:8000/solveMatrix', { method: 'POST'} );
+
+        // THen, get the solution
+        const response = await fetch( 'http://localhost:8000/getSolution' );
+        if ( !response.ok ) {
+          throw new Error( 'Failed to retrieve solution' );
+        }
+        const data = await response.json();
+        this.solution = data.solution;
+        console.log( "Solution: ", this.solution );
+        // TODO: display solution in the UI
+      } catch (error) {
+        console.error( "failed to solve matrix: ", error.message)
       }
+    }
    },
   head() {
     return {
@@ -95,7 +120,6 @@ export default {
 
 
 <style scoped>
-
 button {
   padding: 10px 20px;
   font-size: 16px;
@@ -156,24 +180,21 @@ th, td {
   margin: 0 10px; /* . some spacing between the divider and the boxes */
 }
 
-.matrix-section {
-  flex: 1; /* it will take equal space as its sibling */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 50vw; 
+.matrix-box {
+  width: 50vw; /* this ensures the box is a square */
+  height: 50vw; /* this ensures the box is a square */
+  font-size: 1.3em; 
+  overflow: auto; 
 }
 
-.matrix-box {
-  width: 40vw; /* this ensures the box is a square */
-  height: 40vw; /* this ensures the box is a square */
-  margin-bottom: 20px;
-  overflow: auto; /* makes the content scrollable if it overflows */
+.matrix-section {
+  flex: 1;
+  /* width: 50vm;   */
 }
 
 .red-border {
-  border: 2px solid red;
+  border: none; 
+  /*border: 2px solid red;*/
 }
 
 .root {
@@ -182,7 +203,5 @@ th, td {
   align-items: center;
   padding: 1% 5%;
 }
-
-
 
 </style>
